@@ -8,7 +8,8 @@ random.seed(11) # Setting the random seed
 
 """  Note: This python file is adapted from an original matlab program.   """
 """  There are multiple changes being made to adapt to the python style:  """
-"""  1.  The dummy values for categorical parameters change from (1,2) to (0,1) to adapt 0-indexing in python"""
+"""  1. Changes in the dummy variable values and indices to adapt to 0-indexing in python   """
+"""  2. Typos fixed in multiple functions                                 """
 
 N = 15
 d = np.random.rand(N, 1)
