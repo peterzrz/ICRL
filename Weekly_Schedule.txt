@@ -1,0 +1,15 @@
+09/25/2024 - 10/02/2024
+Tasks:
+1. Convert POMDP_basic_model from Matlab to Python format
+2. Perform testing on the python version by trying to reproduce the results on the paper
+3. Adapt the program to the multi-human multi-robot setting
+Reading:
+1. Reason for Future, Act for Now: A Principled Framework for Autonomous LLM Agents with Provable Sample Efficiency
+2. TIP: A Trust Inference and Propagation Model in Multi-Human Multi-Robot Teams
+3. Reward Shaping for Building Trustworthy Robots in Sequential Human-Robot Interaction
+4. Enabling Team of Teams: A Trust Inference and Propagation (TIP) Model in Multi-Human Multi-Robot Teams
+Question: 
+1. Why coose d_k to be human perception danger level at site 1? Why kappa2 > kappa1, which is opposite of the paper content.
+2. What does humanTB, sensedTB mean? What is experiment 2?
+3. What is this trustreward value? epsilon value?
+4. What is the current idea on the GPT stuff?

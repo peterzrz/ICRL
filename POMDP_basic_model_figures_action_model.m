@@ -8,7 +8,7 @@ close all
 
 addpath('export_fig')
 addpath('tight_subplot')
-rng(11);
+rng(12);
 % rng(412);
 global N ryy ryn rny rnn
 N = 15;
@@ -53,7 +53,7 @@ runMatrixVersion = true;
 
 % parameter for experiment 1
 sensedTB = 1; % 1: reverse, 2: disuse
-objective = 1;                % 1: task,    2: TrustSeeking
+objective = 2;                % 1: task,    2: TrustSeeking
 
 % parameter for experiment 2
 actualTB = 1; %1: reverse, 2: disuse
@@ -142,7 +142,7 @@ end
 
 if runMatrixVersion
     for sensedTB = 1%:2 % 1: reverse, 2: disuse
-        for objective = 1:2 % 1: task,    2: TrustSeeking
+        for objective = 2 % 1: task,    2: TrustSeeking
             % close all
             
             % Calculating value function and action function as matrix
@@ -389,6 +389,7 @@ for plotIndex = 1:totalPlotNumber
     %     subplot(2,totalPlotNumber,plotIndex)
     axes(ha(plotIndex))
     imshow(A(1:plotRegion,1:plotRegion,k))
+    tmp = A(1:plotRegion,1:plotRegion,k)
     %     xlabel('$$\alpha_k$$','interpreter','latex')
     %     ylabel('$$\beta_k$$','interpreter','latex')
     h = gca;
