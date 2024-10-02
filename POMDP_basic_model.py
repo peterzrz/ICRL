@@ -26,18 +26,18 @@ ryy, ryn, rny, rnn = -np.dot(q, [h1, c1]), -np.dot(q, [h2, c2]), -np.dot(q, [0,c
 
 discount_factor = 0.9
 
-d = np.random.rand(N, 1) # Danger level of each site
-kappa1, kappa2 = 3, 50 
+d = np.random.rand(N) # Danger level of each site
+kappa1, kappa2 = 2, 50 
 d_hat, d_tilde = np.random.beta(d*kappa2, (1-d)*kappa2), np.random.beta(d*kappa1, (1-d)*kappa1) # Human/Robot perception of danger level
 
 alpha_0, beta_0 = 100, 50 # Initial alpha, beta values for initial trust
 
 SCap = 800 # used for value/action matrix
 
-#runSimulation = True
-runSimulation = False
-runMatrixVersion = True
-# runMatrixVersion = False
+runSimulation = True
+#runSimulation = False
+#runMatrixVersion = True
+runMatrixVersion = False
 
 # Parameter for Experiment 1
 sensedTB = 0    # 0: reverse, 1: disuse
@@ -45,7 +45,7 @@ objective = 0   # 0: task, 1: Trustseeking
 
 # Parameter for Experiment 2
 actualTB = 0    # 0: reverse, 1: disuse
-simNum = 10000
+simNum = 10
 
 #################################################################################
 ############################  Helper Functions  #################################
@@ -180,7 +180,7 @@ def CalculateBestAction(siteIndex, alpha, beta, ws, wf, d_hat, d_tilde, sensedTB
     for k in range(n):
         subSiteIndex = n - k - 1 
         # Update the column of the experience Matrix
-        for j in range(subSiteIndex):
+        for j in range(subSiteIndex + 1):
             alpha_matrix[j, subSiteIndex] = alpha + (subSiteIndex - j) * ws
             beta_matrix[j, subSiteIndex] = beta + j * wf
         pFollow = np.divide(alpha_matrix[:subSiteIndex + 1, subSiteIndex],
@@ -199,7 +199,7 @@ def CalculateBestAction(siteIndex, alpha, beta, ws, wf, d_hat, d_tilde, sensedTB
         # action N danger N: prob 1-dt  , next state (alpha + ws, beta)
         VN = VN + (1 - d_k) * v_matrix[:subSiteIndex + 1, subSiteIndex + 1] + d_k * v_matrix[1:subSiteIndex + 2, subSiteIndex + 1]
         v_matrix[:subSiteIndex + 1, subSiteIndex] = np.maximum(VY, VN)
-        a_matrix[:subSiteIndex + 1, subSiteIndex] = [[True if VY[i][j] > VN[i][j] else False for j in range(VY.shape[1])] for i in range(VY.shape[0])]
+        a_matrix[:subSiteIndex + 1, subSiteIndex] = [True if VY[i] > VN[i] else False for i in range(VY.shape[0])]
 
     bestAction = a_matrix[0, 0]
     return bestAction
@@ -213,7 +213,7 @@ def SimulatingActualSearch(alpha_0, beta_0, ws, wf, actualTB, sensedTB, objectiv
     # Some logistics to keep track of
     alpha_beta_history = np.zeros((N+1,2))
     alpha_beta_history[0] = [alpha, beta]
-    result = np.random.zeros(N, 10)
+    result = np.zeros((N, 10))
     # Total rewards gained during the simulation
     # Note: in the SAR model, this reward is actually a negative loss that we want to avoid
     reward = 0
@@ -228,7 +228,7 @@ def SimulatingActualSearch(alpha_0, beta_0, ws, wf, actualTB, sensedTB, objectiv
         reward = UpdateReward(reward, threatPresenceSeq[siteIndex], humanAction)
         # Update the logistics
         alpha_beta_history[siteIndex + 1] = [alpha, beta]
-        result[siteIndex] = [recommendation, threatPresenceSeq[siteIndex], humanAction, alpha, beta, alpha/(alpha+beta), 
+        result[siteIndex, :] = [recommendation, threatPresenceSeq[siteIndex], humanAction, alpha, beta, alpha/(alpha+beta), 
                              d[siteIndex], d_hat[siteIndex], d_tilde[siteIndex], reward]
     return result
 
@@ -299,23 +299,30 @@ if runSimulation:
     rewardMeanHistory, rewardSTDHistory = [], []
     trustMeanHistory, trustSTDHistory = [], []
     resultHistory = []
-    kappa_values = [[2,50], [50,2]]
-    f = open("resultTextHistory_untrusted_robot_low_accurate_robot.txt", 'a+')
-    alpha_0 = 50
-    beta_0 = 100
+    kappa_values = [[2,50]]
+    f = open("resultTextHistory_untrusted_robot_low_accurate_robot.txt", 'w')
+    alpha_0 = 100
+    beta_0 = 50
 
     for kappa in kappa_values:
         kappa1, kappa2 = kappa[0], kappa[1]
-        for objective in range(2):
-            for sensedTB in range(2):
-                for actualTB in range(2):
+        for objective in range(1):
+            for sensedTB in range(1):
+                for actualTB in range(1):
                     trustSum = 0
                     trustHistory = []
                     rewardSum = 0
                     rewardHistory = []
                     for j in range(simNum):
-                        d = np.random.rand(N, 1)
+                        d = np.random.rand(N)
+
                         d_hat, d_tilde = np.random.beta(d*kappa2, (1-d)*kappa2), np.random.beta(d*kappa1, (1-d)*kappa1)
+                        """d_hat = [0.25997403, 0.5538136,  0.73785895, 0.2621142,  0.63898997, 0.17989139,
+                                    0.30456616 ,0.08711756, 0.34683773, 0.73849205, 0.41265332, 0.00726155,
+                                    0.57311441, 0.08622867, 0.39927154]
+                        d_tilde = [0.32345232, 0.94276979, 0.97967099, 0.3993069,  0.70621215, 0.50522464,
+                                     0.02841104, 0.06829462, 0.80570023, 0.84645376, 0.27868049, 0.05882758,
+                                    0.9012276,  0.34510161, 0.66817395]"""  
                         # Run a simulation trial and return the results
                         result = SimulatingActualSearch(alpha_0, beta_0, ws, wf, actualTB, sensedTB, objective, d, d_hat, d_tilde)
                         trustSum += result[N - 1,5]
@@ -332,12 +339,12 @@ if runSimulation:
                     trustSTD = np.std(np.array(trustHistory))
                     trustSTDHistory.append(trustSTD)
 
-                    dispText = f"alpha_1: {alpha_0}, beta_1: {beta_0}, kappa1: {kappa1}, kappa2: {kappa2}," + \
-                                "obj: {objective}, sensedTB: {sensedTB}, actualTB: {actualTB}, rewardMean: {rewardMean}, " + \
-                                "rewardSTD: {rewardSTD}, trustMean: {trustMean}, trustSTD: {trustSTD}"
-                    print(dispText)
+                    dispText = (f"alpha_1: {alpha_0}, beta_1: {beta_0}, kappa1: {kappa1}, kappa2: {kappa2}, "
+                    f"obj: {objective}, sensedTB: {sensedTB}, actualTB: {actualTB}, rewardMean: {rewardMean}, "
+                    f"rewardSTD: {rewardSTD}, trustMean: {trustMean}, trustSTD: {trustSTD}\n")
+                    f.write(dispText)
                     resultHistory.append([alpha_0,beta_0,kappa1,kappa2,objective,sensedTB,actualTB,rewardMean,rewardSTD,trustMean,trustSTD])
-    f.write(resultHistory)
+    #f.write(resultHistory)
     f.close()
 
 

@@ -12,7 +12,7 @@ random.seed(11) # Setting the random seed
 N = 15 # Number of search sites in the mission
 numSessions = 15
 wf_human_robot_direct, ws_human_robot_direct = 10, 20 # Predetermined trust update parameters
-wf_human_human, ws_human_human = 10, 20
+wf_human_human, ws_human_human = 5, 20
 wf_human_robot_indirect, ws_human_robot_indirect = 10, 20
 
 
@@ -27,11 +27,11 @@ human_list = ["x", "y"]
 discount_factor = 0.9
 
 d = np.random.rand(N, 1) # Danger level of each site
-kappa1, kappa2 = 3, 50 
+kappa1, kappa2 = 2, 50 
 d_hat, d_tilde = np.random.beta(d*kappa2, (1-d)*kappa2), np.random.beta(d*kappa1, (1-d)*kappa1) # Human/Robot perception of danger level
 
 # Initial alpha, beta values for initial trust
-alpha_human_human_0, beta_human_human_0 = 100, 50 
+alpha_human_human_0, beta_human_human_0 = 100, 30 
 alpha_human_robot_0, beta_human_robot_0 = 100, 50 
 
 SCap = 800 # used for value/action matrix
@@ -141,13 +141,13 @@ def UpdateHumanHumanTrust(human_human_alpha_beta, performance, ws_human_human, w
 
 def UpdateIndirectTrust(indirect_alpha_beta, ws_human_robot_indirect, wf_human_robot_indirect, human_human_alpha_beta, direct_alpha_beta):
     alpha_indirect, beta_indirect = indirect_alpha_beta
-    indirect_trust = alpha_indirect / alpha_indirect + beta_indirect
+    indirect_trust = alpha_indirect / (alpha_indirect + beta_indirect)
 
     alpha_human_human, beta_human_human = human_human_alpha_beta
-    human_human_trust = alpha_human_human / alpha_human_human + beta_human_human
+    human_human_trust = alpha_human_human / (alpha_human_human + beta_human_human)
 
     alpha_direct, beta_direct = direct_alpha_beta
-    direct_trust = alpha_direct / alpha_direct + beta_direct
+    direct_trust = alpha_direct / (alpha_direct + beta_direct)
 
     return (alpha_indirect + ws_human_robot_indirect * human_human_trust * np.maximum(0, direct_trust - indirect_trust), 
             beta_indirect + wf_human_robot_indirect * human_human_trust * np.maximum(0, indirect_trust - direct_trust))
@@ -169,7 +169,7 @@ def CalculateBestAction(siteIndex, alpha, beta, ws, wf, d_hat, d_tilde, sensedTB
     for k in range(n):
         subSiteIndex = n - k - 1 #subSiteIndex = n - k + 1
         # Update the column of the experience Matrix
-        for j in range(subSiteIndex):
+        for j in range(subSiteIndex + 1):
             alpha_matrix[j, subSiteIndex] = alpha + (subSiteIndex - j) * ws
             beta_matrix[j, subSiteIndex] = beta + j * wf
         pFollow = np.divide(alpha_matrix[:subSiteIndex + 1, subSiteIndex],
@@ -188,7 +188,7 @@ def CalculateBestAction(siteIndex, alpha, beta, ws, wf, d_hat, d_tilde, sensedTB
         # action N danger N: prob 1-dt  , next state (alpha + ws, beta)
         VN = VN + (1 - d_k) * v_matrix[:subSiteIndex + 1, subSiteIndex + 1] + d_k * v_matrix[1:subSiteIndex + 2, subSiteIndex + 1]
         v_matrix[:subSiteIndex + 1, subSiteIndex] = np.maximum(VY, VN)
-        a_matrix[:subSiteIndex + 1, subSiteIndex] = [[True if VY[i][j] > VN[i][j] else False for j in range(VY.shape[1])] for i in range(VY.shape[0])]
+        a_matrix[:subSiteIndex + 1, subSiteIndex] = [True if VY[i]> VN[i] else False  for i in range(VY.shape[0])]
 
     bestAction = a_matrix[0, 0]
     return bestAction
@@ -197,6 +197,8 @@ def CalculateBestAction(siteIndex, alpha, beta, ws, wf, d_hat, d_tilde, sensedTB
 
 def SimulatingActualSearch(actualTB, sensedTB, objective):
     trust_dict = {}
+    
+    f = open("testHistory.txt", 'w')
     for human in human_list:
         trust_dict[human] = {}
         for other_human in human_list:
@@ -204,16 +206,14 @@ def SimulatingActualSearch(actualTB, sensedTB, objective):
         for robot in robot_list:
             trust_dict[human][robot] = (alpha_human_robot_0, beta_human_robot_0)
 
-    alpha_beta_history = np.zeros((N+1,2))
-    alpha_beta_history[0] = [alpha, beta]
-    threatPresenceSeq = [True if d_val > np.random.rand() else False for d_val in d]
-    reward = 0
-    result = np.random.zeros(numSessions, len(human_list), N, 10)
     # Loop over different sessions
     for session in range(numSessions):
+        f.write(f"Starting Session {session + 1}\n")
         # Initialize the danger levels and danger presence for this session
         d = np.random.rand(N, 1)
+        threatPresenceSeq = [True if d_val > np.random.rand() else False for d_val in d]
         danger_dict = {}
+        reward = 0
         for human in human_list:
             danger_dict[human] = np.random.beta(d*kappa2, (1-d)*kappa2)
         for robot in robot_list:
@@ -234,7 +234,9 @@ def SimulatingActualSearch(actualTB, sensedTB, objective):
             direct_robot = assignment[human]
             alpha, beta = trust_dict[human][direct_robot]
             d_hat, d_tilde = danger_dict[human], danger_dict[direct_robot]
+            f.write(f"Human {human} works with Robot {direct_robot}\n")
             score = 0
+            robot_score = 0
             for siteIndex in range(N):
                 # Calculate the best action
                 recommendation = CalculateBestAction(siteIndex, alpha, beta, ws_human_robot_direct, wf_human_robot_direct,
@@ -242,13 +244,12 @@ def SimulatingActualSearch(actualTB, sensedTB, objective):
                 # Reveal the truth and update trust
                 # Human action is determined by the trust behavior model
                 humanAction = GenerateHumanAction(alpha, beta, d_tilde[siteIndex], actualTB, recommendation)
+                if recommendation == threatPresenceSeq[siteIndex]: robot_score += 1
                 if humanAction == threatPresenceSeq[siteIndex]: score += 1
                 alpha, beta = UpdateTrust(alpha, beta, threatPresenceSeq[siteIndex], recommendation, ws_human_robot_direct, wf_human_robot_direct)
                 reward = UpdateReward(reward, threatPresenceSeq[siteIndex], humanAction)
-                alpha_beta_history[siteIndex + 1] = [alpha, beta]
-                result[session, i, siteIndex] = [recommendation, threatPresenceSeq[siteIndex], humanAction, alpha, beta, alpha/(alpha+beta), 
-                                    d[siteIndex], d_hat[siteIndex], d_tilde[siteIndex], reward]
-                
+            
+            f.write(f"Reward : {reward}, score: {score}, robot_score: {robot_score}, trust from {human} to {direct_robot} is {alpha / (alpha + beta)}\n")
             # Update direct trust after the session has finished
             trust_dict[human][direct_robot] = (alpha, beta)
 
@@ -261,7 +262,12 @@ def SimulatingActualSearch(actualTB, sensedTB, objective):
                     trust_dict[other_human][direct_robot] = UpdateIndirectTrust(trust_dict[other_human][direct_robot],
                                                                                 ws_human_robot_indirect, wf_human_robot_indirect,
                                                                                 trust_dict[other_human][human], trust_dict[human][direct_robot])
+        for human in human_list:
+            for target, value in trust_dict[human].items():
+                f.write(f"Trust from {human} to {target} is {value[0]/(value[0] + value[1]):.2f}, where alpha, beta = ({value[0]:.2f}, {value[1]:.2f})\n")
 
-
+        f.write(f"------------------------------------------------------------------------------\n")
+    f.close()
         
-    return result
+
+SimulatingActualSearch(0,0,0)

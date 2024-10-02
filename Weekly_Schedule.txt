@@ -9,7 +9,6 @@ Reading:
 3. Reward Shaping for Building Trustworthy Robots in Sequential Human-Robot Interaction
 4. Enabling Team of Teams: A Trust Inference and Propagation (TIP) Model in Multi-Human Multi-Robot Teams
 Question: 
-1. Why coose d_k to be human perception danger level at site 1? Why kappa2 > kappa1, which is opposite of the paper content.
-2. What does humanTB, sensedTB mean? What is experiment 2?
-3. What is this trustreward value? epsilon value?
-4. What is the current idea on the GPT stuff?
+1. discount_factor?
+2. What is this trustreward value? epsilon value?
+3. What is the current idea on the GPT stuff?
