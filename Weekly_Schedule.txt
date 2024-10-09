@@ -1,4 +1,4 @@
-09/25/2024 - 10/02/2024
+09/25/2024 - 10/01/2024
 Tasks:
 1. Convert POMDP_basic_model from Matlab to Python format
 2. Perform testing on the python version by trying to reproduce the results on the paper
@@ -12,3 +12,10 @@ Question:
 1. discount_factor?
 2. What is this trustreward value? epsilon value?
 3. What is the current idea on the GPT stuff?
+
+
+10/02/2024 - 10/08/2024
+Tasks:
+1. Find possible methods to incorporate reward into trust update: Thoughts: 1-exp(ax)/(1+exp(ax))
+2. Compare empirical data to simulation results with fitted parameters -> Study the inter-human parameter
+3. Write a fitting algorithm in python

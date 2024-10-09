@@ -129,16 +129,16 @@ def ImmediateReward(pFollow, pNotFollow, siteIndex, d_hat, d_tilde, sensedTB, ob
             d_k = d_tilde[siteIndex]
 
         VY = \
-        pNotFollow * d_k     * (ryn + trustReward) + \
-        pFollow    * d_k     * (ryy + trustReward) + \
+        pNotFollow * d_k     * (ryn + trustReward * 0.7) + \
+        pFollow    * d_k     * (ryy + trustReward * 0.7) + \
         pNotFollow * (1-d_k) * rnn + \
         pFollow    * (1-d_k) * rny
 
         VN = \
         pFollow    * d_k     * ryn + \
         pNotFollow * d_k     * ryy + \
-        pFollow    * (1-d_k) * (rnn + trustReward) + \
-        pNotFollow * (1-d_k) * (rny + trustReward)
+        pFollow    * (1-d_k) * (rnn + trustReward * 0.3) + \
+        pNotFollow * (1-d_k) * (rny + trustReward * 0.3)
 
     elif sensedTB == 1:           # disuse    
         d_tilde_k = d_tilde[siteIndex]       # unless at the current (1st) house, the robot will use d_tilde_k to estimate d_k

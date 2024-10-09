@@ -1,1 +1,0 @@
-alpha_1: 100, beta_1: 50, kappa1: 2, kappa2: 50, obj: 0, sensedTB: 0, actualTB: 0, rewardMean: -725.9, rewardSTD: 130.93009585271065, trustMean: 0.7675075129697931, trustSTD: 0.0713276249614488
